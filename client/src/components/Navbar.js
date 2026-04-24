@@ -123,21 +123,22 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.9 }}>
               {isAuthenticated ? (
                 <>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography variant="body1" color="text.secondary" sx={{ px: 1.1 }}>
                     Welcome, <span style={{ fontWeight: 600, color: theme.palette.primary.main }}>{user?.name}</span>
                   </Typography>
                   <Button
-                    variant="outlined"
+                    variant="text"
                     onClick={() => navigate(getDashboardPath())}
                     sx={{
-                      borderColor: theme.palette.primary.main,
                       color: theme.palette.primary.main,
+                      minWidth: 'auto',
+                      px: 1.1,
                       '&:hover': {
-                        borderColor: theme.palette.primary.dark,
-                        backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                        backgroundColor: 'transparent',
+                        textDecoration: 'underline',
                       },
                     }}
                   >
@@ -145,14 +146,15 @@ const Navbar = () => {
                   </Button>
                   {user?.role === 'patient' && (
                     <Button
-                      variant="outlined"
+                      variant="text"
                       onClick={() => navigate('/patient-records')}
                       sx={{
-                        borderColor: theme.palette.secondary.main,
                         color: theme.palette.secondary.main,
+                        minWidth: 'auto',
+                        px: 1.1,
                         '&:hover': {
-                          borderColor: theme.palette.secondary.dark,
-                          backgroundColor: 'rgba(236, 72, 153, 0.06)',
+                          backgroundColor: 'transparent',
+                          textDecoration: 'underline',
                         },
                       }}
                     >

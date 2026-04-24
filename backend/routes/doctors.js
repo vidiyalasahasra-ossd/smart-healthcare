@@ -1,6 +1,7 @@
 const express = require('express');
 const Doctor = require('../models/Doctor');
 const { auth, requireRole } = require('../middleware/auth');
+const { normalizeAvailability, validateAvailability } = require('../utils/availability');
 
 const router = express.Router();
 
@@ -123,6 +124,15 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const updates = req.body;
+    if (updates.availability !== undefined) {
+      const validation = validateAvailability(updates.availability);
+      if (!validation.valid) {
+        return res.status(400).json({ message: validation.message });
+      }
+
+      updates.availability = normalizeAvailability(updates.availability);
+    }
+
     Object.keys(updates).forEach(key => {
       if (updates[key] !== undefined) {
         doctor[key] = updates[key];
@@ -149,7 +159,12 @@ router.put('/:id/availability', auth, requireRole(['doctor']), async (req, res) 
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    doctor.availability = req.body.availability;
+    const validation = validateAvailability(req.body.availability);
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
+    }
+
+    doctor.availability = normalizeAvailability(req.body.availability);
     await doctor.save();
 
     res.json(doctor.availability);

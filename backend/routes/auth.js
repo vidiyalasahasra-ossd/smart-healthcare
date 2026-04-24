@@ -136,19 +136,16 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
@@ -171,7 +168,10 @@ router.post('/login', [
 router.get('/profile', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
+    if (user) {
+      return res.json(user);
+    }
+    return res.status(404).json({ message: 'User not found' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

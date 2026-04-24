@@ -62,6 +62,7 @@ export const recordsAPI = {
   createRecord: (payload) => api.post('/records', payload),
   updateRecord: (id, payload) => api.put(`/records/${id}`, payload),
   deleteRecord: (id) => api.delete(`/records/${id}`),
+  verifyChain: () => api.get('/records/verify-chain'),
 };
 
 // OTP API

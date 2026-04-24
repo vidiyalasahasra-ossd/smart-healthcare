@@ -38,8 +38,11 @@ async function connectDB() {
     );
   }
 
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 10000,
+  });
   console.log('MongoDB connected successfully');
+  return true;
 }
 
 module.exports = { connectDB, getMongoUri };

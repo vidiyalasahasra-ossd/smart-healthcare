@@ -31,13 +31,17 @@ import {
   Paper,
   Tabs,
   Tab,
-  Stack
+  Stack,
+  CardActions
 } from '@mui/material';
 import { appointmentsAPI, doctorsAPI, usersAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 
 const AdminDashboard = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -218,15 +222,33 @@ const AdminDashboard = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Admin Dashboard
-        </Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        py: 4,
+        background: 'radial-gradient(circle at top right, rgba(236,72,153,0.14), transparent 25%), linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%)',
+      }}
+    >
+    <Container maxWidth="xl">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, gap: 2, flexWrap: 'wrap' }}>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>
+            Admin Dashboard
+          </Typography>
+          <Typography color="text.secondary">
+            Manage the ecosystem, keep appointments flowing, and review all users in one place.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<PersonAddIcon />}
           onClick={handleAddDoctor}
+          sx={{
+            px: 3,
+            py: 1.5,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #2563eb 0%, #ec4899 100%)',
+          }}
         >
           Add Doctor
         </Button>
@@ -251,12 +273,13 @@ const AdminDashboard = () => {
       {tabValue === 0 && (
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ borderRadius: 4, boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h3" color="primary">
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                  <PeopleIcon color="primary" />
+                  <Typography variant="h6">Total Users</Typography>
+                </Stack>
+                <Typography variant="h3" color="primary" sx={{ fontWeight: 800 }}>
                   {users.length}
                 </Typography>
               </CardContent>
@@ -264,12 +287,13 @@ const AdminDashboard = () => {
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ borderRadius: 4, boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Total Doctors
-                </Typography>
-                <Typography variant="h3" color="secondary">
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                  <LocalHospitalIcon sx={{ color: '#ec4899' }} />
+                  <Typography variant="h6">Total Doctors</Typography>
+                </Stack>
+                <Typography variant="h3" color="secondary" sx={{ fontWeight: 800 }}>
                   {doctors.length}
                 </Typography>
               </CardContent>
@@ -277,12 +301,13 @@ const AdminDashboard = () => {
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ borderRadius: 4, boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Total Appointments
-                </Typography>
-                <Typography variant="h3" color="success.main">
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                  <CalendarTodayIcon sx={{ color: '#10b981' }} />
+                  <Typography variant="h6">Appointments</Typography>
+                </Stack>
+                <Typography variant="h3" color="success.main" sx={{ fontWeight: 800 }}>
                   {appointments.length}
                 </Typography>
               </CardContent>
@@ -290,12 +315,13 @@ const AdminDashboard = () => {
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ borderRadius: 4, boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Pending Appointments
-                </Typography>
-                <Typography variant="h3" color="warning.main">
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                  <PendingActionsIcon sx={{ color: '#f59e0b' }} />
+                  <Typography variant="h6">Pending</Typography>
+                </Stack>
+                <Typography variant="h3" color="warning.main" sx={{ fontWeight: 800 }}>
                   {appointments.filter(apt => apt.status === 'pending').length}
                 </Typography>
               </CardContent>
@@ -307,10 +333,10 @@ const AdminDashboard = () => {
       {/* Users Tab */}
       {tabValue === 1 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
             Manage Users
           </Typography>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -352,10 +378,10 @@ const AdminDashboard = () => {
       {/* Doctors Tab */}
       {tabValue === 2 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
             Manage Doctors
           </Typography>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -385,10 +411,10 @@ const AdminDashboard = () => {
       {/* Appointments Tab */}
       {tabValue === 3 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
             All Appointments
           </Typography>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15,23,42,0.08)' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -637,6 +663,7 @@ const AdminDashboard = () => {
         </DialogActions>
       </Dialog>
     </Container>
+    </Box>
   );
 };
 

@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const { connectDB } = require('./config/db');
 const { router: otpRoutes } = require('./routes/otp');
+const { ensureSampleDoctors } = require('./utils/sampleDoctors');
+const { ensureAdminUser } = require('./utils/seedAdmin');
 
 const authRoutes = require('./routes/auth');
 const doctorRoutes = require('./routes/doctors');
@@ -31,6 +33,8 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     await connectDB();
+    await ensureAdminUser();
+    await ensureSampleDoctors();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

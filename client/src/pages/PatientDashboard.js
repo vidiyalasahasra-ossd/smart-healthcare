@@ -16,13 +16,22 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogContent,
+  Fab,
+  Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { appointmentsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import PatientChatbot from '../components/PatientChatbot';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -31,6 +40,7 @@ const PatientDashboard = () => {
   const [chatInputs, setChatInputs] = useState({});
   const [chatRecipients, setChatRecipients] = useState({});
   const [selectedChatAppointment, setSelectedChatAppointment] = useState(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -163,17 +173,17 @@ const PatientDashboard = () => {
     <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
       <Box
         sx={{
-          background: 'linear-gradient(180deg, #e6f4ff 0%, #f5fbff 100%)',
-          borderRadius: 4,
+          background: 'radial-gradient(circle at top right, rgba(236,72,153,0.16), transparent 25%), linear-gradient(180deg, #e6f4ff 0%, #f5fbff 100%)',
+          borderRadius: 5,
           p: { xs: 2, md: 3 },
-          boxShadow: '0 10px 30px rgba(30, 136, 229, 0.12)'
+          boxShadow: '0 18px 50px rgba(30, 136, 229, 0.12)'
         }}
       >
         <Card
           sx={{
             mb: 3,
-            borderRadius: 3,
-            background: 'linear-gradient(120deg, #90caf9 0%, #42a5f5 100%)',
+            borderRadius: 4,
+            background: 'linear-gradient(120deg, #2563eb 0%, #ec4899 100%)',
             color: '#fff'
           }}
         >
@@ -192,11 +202,15 @@ const PatientDashboard = () => {
                 size="large"
                 onClick={handleBookAppointment}
                 sx={{
-                  bgcolor: '#ffb300',
-                  color: '#1f2937',
+                  bgcolor: '#ffffff',
+                  color: '#0f172a',
                   fontWeight: 800,
-                  boxShadow: '0 8px 18px rgba(255, 179, 0, 0.35)',
-                  '&:hover': { bgcolor: '#ffc107' }
+                  border: '1px solid rgba(148, 163, 184, 0.35)',
+                  boxShadow: '0 10px 22px rgba(15, 23, 42, 0.10)',
+                  '&:hover': {
+                    bgcolor: '#f8fafc',
+                    boxShadow: '0 12px 26px rgba(15, 23, 42, 0.14)',
+                  }
                 }}
               >
                 Book Appointment
@@ -207,38 +221,47 @@ const PatientDashboard = () => {
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={4}>
-            <Card sx={{ borderRadius: 3, bgcolor: '#ffffffcc' }}>
+            <Card sx={{ borderRadius: 4, bgcolor: '#ffffffcc', boxShadow: '0 10px 24px rgba(15,23,42,0.06)' }}>
               <CardContent sx={{ py: 2 }}>
-                <Typography variant="body2" color="text.secondary">Total</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>{appointments.length}</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <FavoriteIcon color="primary" />
+                  <Typography variant="body2" color="text.secondary">Total Appointments</Typography>
+                </Stack>
+                <Typography variant="h4" sx={{ fontWeight: 800, mt: 1 }}>{appointments.length}</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <Card sx={{ borderRadius: 3, bgcolor: '#d9ffe6' }}>
+            <Card sx={{ borderRadius: 4, bgcolor: '#d9ffe6', boxShadow: '0 10px 24px rgba(16,185,129,0.12)' }}>
               <CardContent sx={{ py: 2 }}>
-                <Typography variant="body2" color="text.secondary">Confirmed</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>{confirmedCount}</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <EventAvailableIcon sx={{ color: '#059669' }} />
+                  <Typography variant="body2" color="text.secondary">Confirmed</Typography>
+                </Stack>
+                <Typography variant="h4" sx={{ fontWeight: 800, mt: 1 }}>{confirmedCount}</Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <Card sx={{ borderRadius: 3, bgcolor: '#fff7cc' }}>
+            <Card sx={{ borderRadius: 4, bgcolor: '#fff7cc', boxShadow: '0 10px 24px rgba(245,158,11,0.12)' }}>
               <CardContent sx={{ py: 2 }}>
-                <Typography variant="body2" color="text.secondary">Pending</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>{pendingCount}</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <HourglassBottomIcon sx={{ color: '#d97706' }} />
+                  <Typography variant="body2" color="text.secondary">Pending</Typography>
+                </Stack>
+                <Typography variant="h4" sx={{ fontWeight: 800, mt: 1 }}>{pendingCount}</Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }}>
             {error}
           </Alert>
         )}
 
-        <Typography variant="h5" component="h2" sx={{ mb: 2, fontWeight: 700, color: '#0d47a1' }}>
+        <Typography variant="h5" component="h2" sx={{ mb: 2, fontWeight: 800, color: '#0d47a1' }}>
           Appointments
         </Typography>
 
@@ -249,7 +272,7 @@ const PatientDashboard = () => {
               <Button size="small" onClick={() => setSelectedChatAppointment(null)}>Close</Button>
             </Box>
             <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-              {new Date(selectedChatAppointment.date).toLocaleDateString()} • {selectedChatAppointment.time}
+              {new Date(selectedChatAppointment.date).toLocaleDateString()} - {selectedChatAppointment.time}
             </Typography>
             <Stack spacing={1} sx={{ maxHeight: 280, overflowY: 'auto', mb: 1, bgcolor: '#f8fbff', p: 1, borderRadius: 2 }}>
               {(selectedChatAppointment.chatMessages || []).filter(isMessageVisibleToPatient).map((msg, idx) => (
@@ -375,6 +398,47 @@ const PatientDashboard = () => {
           </Grid>
         )}
       </Box>
+
+      <Tooltip title="Open health assistant" placement="left">
+        <Fab
+          color="primary"
+          onClick={() => setAssistantOpen(true)}
+          sx={{
+            position: 'fixed',
+            right: { xs: 16, md: 28 },
+            bottom: { xs: 16, md: 28 },
+            width: 64,
+            height: 64,
+            background: 'linear-gradient(135deg, #2563eb 0%, #ec4899 100%)',
+            boxShadow: '0 16px 30px rgba(37, 99, 235, 0.35)',
+            zIndex: 1400,
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #db2777 100%)',
+            },
+          }}
+        >
+          <SmartToyOutlinedIcon sx={{ fontSize: 32 }} />
+        </Fab>
+      </Tooltip>
+
+      <Dialog
+        open={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <PatientChatbot />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

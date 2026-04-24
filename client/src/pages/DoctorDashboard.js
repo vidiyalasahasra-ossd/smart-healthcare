@@ -24,6 +24,44 @@ import { JitsiMeeting } from '@jitsi/react-sdk';
 import { doctorsAPI, appointmentsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const parseSlotRange = (slotTime) => {
+  const match = String(slotTime || '').trim().match(/^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return null;
+
+  const [, startHour, startMinute, endHour, endMinute] = match;
+  const startMinutes = (Number(startHour) * 60) + Number(startMinute);
+  const endMinutes = (Number(endHour) * 60) + Number(endMinute);
+
+  if (startMinutes >= endMinutes) return null;
+
+  return { startMinutes, endMinutes };
+};
+
+const slotsOverlap = (firstSlotTime, secondSlotTime) => {
+  const first = typeof firstSlotTime === 'string' ? parseSlotRange(firstSlotTime) : firstSlotTime;
+  const second = typeof secondSlotTime === 'string' ? parseSlotRange(secondSlotTime) : secondSlotTime;
+
+  if (!first || !second) return false;
+
+  return first.startMinutes < second.endMinutes && second.startMinutes < first.endMinutes;
+};
+
+const sortSlots = (slots = []) => (
+  [...slots].sort((left, right) => {
+    const leftRange = parseSlotRange(left.time);
+    const rightRange = parseSlotRange(right.time);
+
+    if (!leftRange && !rightRange) return String(left.time || '').localeCompare(String(right.time || ''));
+    if (!leftRange) return 1;
+    if (!rightRange) return -1;
+    if (leftRange.startMinutes !== rightRange.startMinutes) {
+      return leftRange.startMinutes - rightRange.startMinutes;
+    }
+
+    return leftRange.endMinutes - rightRange.endMinutes;
+  })
+);
+
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
@@ -94,7 +132,13 @@ const DoctorDashboard = () => {
   };
 
   const getDayAvailability = (dayName) => {
-    return availability.find(entry => entry.day === dayName) || { day: dayName, slots: [] };
+    const entry = availability.find((item) => item.day === dayName);
+    if (!entry) return { day: dayName, slots: [] };
+
+    return {
+      ...entry,
+      slots: sortSlots(entry.slots || [])
+    };
   };
 
   const isAppointmentInBookedSlot = (appointment) => {
@@ -122,11 +166,55 @@ const DoctorDashboard = () => {
       if (entry.day !== dayName) return entry;
       return {
         ...entry,
-        slots: entry.slots.map(slot =>
+        slots: sortSlots(entry.slots.map(slot =>
           slot.time === slotTime ? { ...slot, available: !slot.available } : slot
-        )
+        ))
       };
     }));
+  };
+
+  const getOverlappingSlot = (slots, candidateSlot) => {
+    const normalizedCandidate = String(candidateSlot || '').trim();
+    return (slots || []).find((slot) => slotsOverlap(slot.time, normalizedCandidate));
+  };
+
+  const addSlotForSelectedDay = (slotTime) => {
+    const normalizedSlot = String(slotTime || '').trim();
+    let updated = false;
+
+    setAvailability((prev) => {
+      const dayEntry = prev.find((entry) => entry.day === selectedDayName);
+
+      if (dayEntry) {
+        if (dayEntry.slots.some((slot) => slot.time === normalizedSlot)) {
+          setError('This timeslot already exists for the selected day.');
+          return prev;
+        }
+
+        const overlappingSlot = getOverlappingSlot(dayEntry.slots, normalizedSlot);
+        if (overlappingSlot) {
+          setError(`This slot overlaps with ${overlappingSlot.time}. Remove or adjust that slot first.`);
+          return prev;
+        }
+
+        updated = true;
+        return prev.map((entry) => (
+          entry.day === selectedDayName
+            ? { ...entry, slots: sortSlots([...(entry.slots || []), { time: normalizedSlot, available: true }]) }
+            : entry
+        ));
+      }
+
+      updated = true;
+      return [...prev, { day: selectedDayName, slots: [{ time: normalizedSlot, available: true }] }];
+    });
+
+    if (updated) {
+      setError('');
+      return true;
+    }
+
+    return false;
   };
 
   const handleAddSlot = () => {
@@ -135,25 +223,9 @@ const DoctorDashboard = () => {
       return;
     }
 
-    setError('');
-
-    setAvailability(prev => {
-      const dayEntry = prev.find(entry => entry.day === selectedDayName);
-      if (dayEntry) {
-        if (dayEntry.slots.some(slot => slot.time === selectedSlot)) {
-          setError('This timeslot already exists for the selected day.');
-          return prev;
-        }
-        return prev.map(entry =>
-          entry.day === selectedDayName
-            ? { ...entry, slots: [...entry.slots, { time: selectedSlot, available: true }] }
-            : entry
-        );
-      }
-
-      return [...prev, { day: selectedDayName, slots: [{ time: selectedSlot, available: true }] }];
-    });
-    setSelectedSlot('');
+    if (addSlotForSelectedDay(selectedSlot)) {
+      setSelectedSlot('');
+    }
   };
 
   const handleAddCustomSlot = () => {
@@ -168,31 +240,14 @@ const DoctorDashboard = () => {
       return;
     }
 
-    if (customSlot.split('-')[0] >= customSlot.split('-')[1]) {
+    if (!parseSlotRange(customSlot)) {
       setError('End time must be after start time.');
       return;
     }
 
-    setError('');
-
-    setAvailability(prev => {
-      const dayEntry = prev.find(entry => entry.day === selectedDayName);
-      if (dayEntry) {
-        if (dayEntry.slots.some(slot => slot.time === customSlot)) {
-          setError('This custom timeslot already exists for the selected day.');
-          return prev;
-        }
-        return prev.map(entry =>
-          entry.day === selectedDayName
-            ? { ...entry, slots: [...entry.slots, { time: customSlot, available: true }] }
-            : entry
-        );
-      }
-
-      return [...prev, { day: selectedDayName, slots: [{ time: customSlot, available: true }] }];
-    });
-
-    setCustomSlot('');
+    if (addSlotForSelectedDay(customSlot)) {
+      setCustomSlot('');
+    }
   };
 
   const handleRemoveSlot = (day, slotTime) => {
@@ -201,7 +256,7 @@ const DoctorDashboard = () => {
         if (entry.day !== day) return entry;
         return {
           ...entry,
-          slots: entry.slots.filter(slot => slot.time !== slotTime)
+          slots: sortSlots(entry.slots.filter(slot => slot.time !== slotTime))
         };
       }).filter(entry => entry.slots.length > 0)
     );
@@ -388,7 +443,16 @@ const DoctorDashboard = () => {
                   Click slot to toggle availability status.
                 </Typography>
 
-                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1.25,
+                    rowGap: 1.5,
+                    alignItems: 'flex-start',
+                    mb: 3
+                  }}
+                >
                   {getDayAvailability(selectedDayName).slots.length > 0 ? (
                     getDayAvailability(selectedDayName).slots.map((slot) => (
                       <Chip
@@ -397,7 +461,13 @@ const DoctorDashboard = () => {
                         color={slot.available ? 'success' : 'default'}
                         onClick={() => toggleSlotAvailability(selectedDayName, slot.time)}
                         onDelete={() => handleRemoveSlot(selectedDayName, slot.time)}
-                        sx={{ mb: 1 }}
+                        sx={{
+                          height: 'auto',
+                          '& .MuiChip-label': {
+                            display: 'block',
+                            py: 0.75
+                          }
+                        }}
                       />
                     ))
                   ) : (
@@ -405,7 +475,7 @@ const DoctorDashboard = () => {
                       No slots configured for this date. Add one above.
                     </Typography>
                   )}
-                </Stack>
+                </Box>
 
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   Weekly availability summary:
@@ -414,21 +484,44 @@ const DoctorDashboard = () => {
                 {availability.length > 0 ? (
                   <Stack spacing={1}>
                     {availability.map((dayEntry) => (
-                      <Box key={dayEntry.day}>
-                        <Typography sx={{ fontWeight: 700 }}>{dayEntry.day}</Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
-                          {dayEntry.slots.map((slot) => (
+                        <Box
+                          key={dayEntry.day}
+                          sx={{
+                            p: 1.5,
+                            border: '1px solid',
+                            borderColor: 'grey.200',
+                            borderRadius: 2,
+                            backgroundColor: 'grey.50'
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 700, mb: 1.25 }}>{dayEntry.day}</Typography>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 1.25,
+                              rowGap: 1.5,
+                              alignItems: 'flex-start'
+                            }}
+                          >
+                          {sortSlots(dayEntry.slots).map((slot) => (
                             <Chip
                               key={slot.time}
                               label={`${slot.time} ${slot.available ? '✅' : '❌'}`}
                               color={slot.available ? 'success' : 'default'}
                               onClick={() => toggleSlotAvailability(dayEntry.day, slot.time)}
                               onDelete={() => handleRemoveSlot(dayEntry.day, slot.time)}
-                              sx={{ mb: 1 }}
-                            />
-                          ))}
-                        </Stack>
-                      </Box>
+                                sx={{
+                                  height: 'auto',
+                                  '& .MuiChip-label': {
+                                    display: 'block',
+                                    py: 0.75
+                                  }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
                     ))}
                   </Stack>
                 ) : (

@@ -2,13 +2,20 @@ const express = require('express');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const { auth, requireRole } = require('../middleware/auth');
+const { parseSlotRange, slotsOverlap } = require('../utils/availability');
 
 const router = express.Router();
+const normalizeId = (value) => (value && value._id ? value._id.toString() : value?.toString());
 
 // Book appointment (patients only)
 router.post('/', auth, requireRole(['patient']), async (req, res) => {
   try {
     const { doctorId, date, time, mode, symptoms, notes } = req.body;
+    const requestedSlot = parseSlotRange(time);
+
+    if (!requestedSlot) {
+      return res.status(400).json({ message: 'Invalid appointment time slot' });
+    }
 
     // Check if slot is available
     const doctor = await Doctor.findById(doctorId);
@@ -16,22 +23,36 @@ router.post('/', auth, requireRole(['patient']), async (req, res) => {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
+    const appointmentDate = new Date(date);
+    const weekday = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayAvailability = doctor.availability?.find((entry) => entry.day === weekday);
+    const isRequestedSlotAvailable = dayAvailability?.slots?.some(
+      (slot) => slot.available && slot.time === time
+    );
+
+    if (!isRequestedSlotAvailable) {
+      return res.status(400).json({ message: 'Selected slot is not available' });
+    }
+
     // Check if appointment already exists for this slot
-    const existingAppointment = await Appointment.findOne({
+    const existingAppointments = await Appointment.find({
       doctor: doctorId,
-      date: new Date(date),
-      time,
+      date: appointmentDate,
       status: { $in: ['pending', 'confirmed'] }
     });
 
-    if (existingAppointment) {
+    const conflictingAppointment = existingAppointments.find((appointment) => (
+      appointment.time === time || slotsOverlap(appointment.time, requestedSlot)
+    ));
+
+    if (conflictingAppointment) {
       return res.status(400).json({ message: 'Slot already booked' });
     }
 
     const appointment = new Appointment({
       patient: req.user._id,
       doctor: doctorId,
-      date: new Date(date),
+      date: appointmentDate,
       time,
       mode: mode || 'video',
       symptoms,
@@ -386,4 +407,3 @@ router.put('/:id/cancel', auth, async (req, res) => {
 });
 
 module.exports = router;
-    const normalizeId = (value) => (value && value._id ? value._id.toString() : value?.toString());
