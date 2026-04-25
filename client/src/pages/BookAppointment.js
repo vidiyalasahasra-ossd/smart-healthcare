@@ -33,6 +33,23 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PersonIcon from '@mui/icons-material/Person';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
+const formatLocalDateValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateValue = (value) => {
+  if (!value || typeof value !== 'string') return null;
+
+  const [year, month, day] = value.split('-').map(Number);
+  if ([year, month, day].some((part) => Number.isNaN(part))) return null;
+
+  const parsedDate = new Date(year, month - 1, day);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
 const BookAppointment = () => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -135,7 +152,7 @@ const BookAppointment = () => {
 
       if (availableDays.includes(weekday)) {
         dates.push({
-          value: date.toISOString().split('T')[0],
+          value: formatLocalDateValue(date),
           label: date.toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -151,11 +168,14 @@ const BookAppointment = () => {
 
   const getSlotsForSelectedDate = () => {
     if (!doctor?.availability || !selectedDate) return [];
-    const dateObj = new Date(selectedDate);
-    if (Number.isNaN(dateObj.getTime())) return [];
+    const dateObj = parseLocalDateValue(selectedDate);
+    if (!dateObj || Number.isNaN(dateObj.getTime())) return [];
     const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
     const entry = doctor.availability.find(av => av.day === weekday);
-    return entry?.slots?.filter(s => s.available).map(s => s.time) || [];
+    return entry?.slots
+      ?.filter((slot) => slot.available)
+      .map((slot) => slot.time)
+      .sort((left, right) => left.localeCompare(right)) || [];
   };
 
   const timeSlots = getSlotsForSelectedDate();

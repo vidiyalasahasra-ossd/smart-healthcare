@@ -77,14 +77,22 @@ const Register = () => {
     // If OTP hasn't been sent yet, request it
     if (!otpSent) {
       try {
-        await otpAPI.sendOtp(normalizedEmail);
+        const response = await otpAPI.sendOtp(normalizedEmail);
+        const responseMessage = response.data?.message || `OTP sent to ${normalizedEmail}. Please check your inbox.`;
+        const devOtpMessage = !response.data?.delivered && response.data?.devOtp
+          ? ` OTP for local testing: ${response.data.devOtp}`
+          : '';
+
         setFormData((prev) => ({
           ...prev,
           email: normalizedEmail
         }));
         setOtpSent(true);
         setOtpEmail(normalizedEmail);
-        setSuccess(`OTP sent to ${normalizedEmail}. Please check your inbox.`);
+        if (!response.data?.delivered && response.data?.devOtp) {
+          setOtp(String(response.data.devOtp));
+        }
+        setSuccess(`${responseMessage}${devOtpMessage}`);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to send OTP. Please check your email address.');
       } finally {

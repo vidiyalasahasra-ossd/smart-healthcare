@@ -62,6 +62,26 @@ const sortSlots = (slots = []) => (
   })
 );
 
+const slotContainerSx = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+  columnGap: 1.25,
+  rowGap: 1.5,
+};
+
+const slotChipSx = {
+  m: 0,
+  minHeight: 38,
+  flex: '0 0 auto',
+  '& .MuiChip-label': {
+    display: 'block',
+    py: 0.75,
+    lineHeight: 1.3,
+    whiteSpace: 'nowrap',
+  },
+};
+
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
@@ -443,16 +463,7 @@ const DoctorDashboard = () => {
                   Click slot to toggle availability status.
                 </Typography>
 
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 1.25,
-                    rowGap: 1.5,
-                    alignItems: 'flex-start',
-                    mb: 3
-                  }}
-                >
+                <Box sx={{ ...slotContainerSx, mb: 3 }}>
                   {getDayAvailability(selectedDayName).slots.length > 0 ? (
                     getDayAvailability(selectedDayName).slots.map((slot) => (
                       <Chip
@@ -461,13 +472,7 @@ const DoctorDashboard = () => {
                         color={slot.available ? 'success' : 'default'}
                         onClick={() => toggleSlotAvailability(selectedDayName, slot.time)}
                         onDelete={() => handleRemoveSlot(selectedDayName, slot.time)}
-                        sx={{
-                          height: 'auto',
-                          '& .MuiChip-label': {
-                            display: 'block',
-                            py: 0.75
-                          }
-                        }}
+                        sx={slotChipSx}
                       />
                     ))
                   ) : (
@@ -482,7 +487,7 @@ const DoctorDashboard = () => {
                 </Typography>
 
                 {availability.length > 0 ? (
-                  <Stack spacing={1}>
+                  <Stack spacing={1.5}>
                     {availability.map((dayEntry) => (
                         <Box
                           key={dayEntry.day}
@@ -495,15 +500,7 @@ const DoctorDashboard = () => {
                           }}
                         >
                           <Typography sx={{ fontWeight: 700, mb: 1.25 }}>{dayEntry.day}</Typography>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexWrap: 'wrap',
-                              gap: 1.25,
-                              rowGap: 1.5,
-                              alignItems: 'flex-start'
-                            }}
-                          >
+                          <Box sx={slotContainerSx}>
                           {sortSlots(dayEntry.slots).map((slot) => (
                             <Chip
                               key={slot.time}
@@ -511,13 +508,7 @@ const DoctorDashboard = () => {
                               color={slot.available ? 'success' : 'default'}
                               onClick={() => toggleSlotAvailability(dayEntry.day, slot.time)}
                               onDelete={() => handleRemoveSlot(dayEntry.day, slot.time)}
-                                sx={{
-                                  height: 'auto',
-                                  '& .MuiChip-label': {
-                                    display: 'block',
-                                    py: 0.75
-                                  }
-                                }}
+                                sx={slotChipSx}
                               />
                             ))}
                           </Box>

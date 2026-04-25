@@ -30,6 +30,23 @@ const getTransporter = () => {
 
 const buildOtp = () => String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
+const buildOtpResponse = ({ email, otp, delivered }) => {
+  const response = {
+    message: delivered
+      ? `OTP sent successfully to ${email}`
+      : `OTP generated for ${email}. Email delivery is unavailable in this environment.`,
+    email,
+    delivered,
+  };
+
+  if (!isProduction && !delivered) {
+    response.devOtp = otp;
+    response.note = 'Development mode: use the returned OTP directly because email delivery is unavailable.';
+  }
+
+  return response;
+};
+
 router.post(
   '/send-otp',
   [body('email').isEmail().normalizeEmail().withMessage('Valid email required')],
@@ -45,12 +62,6 @@ router.post(
       const otpHash = await bcrypt.hash(otp, 10);
       const transporter = getTransporter();
 
-      if (!transporter) {
-        return res.status(500).json({
-          message: 'OTP email service is not configured on the server.',
-        });
-      }
-
       await Otp.findOneAndUpdate(
         { email },
         {
@@ -61,19 +72,34 @@ router.post(
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 
-      if (transporter) {
+      if (!transporter) {
+        if (isProduction) {
+          return res.status(500).json({
+            message: 'OTP email service is not configured on the server.',
+          });
+        }
+
+        return res.json(buildOtpResponse({ email, otp, delivered: false }));
+      }
+
+      try {
         await transporter.sendMail({
           from: process.env.SMTP_FROM || process.env.SMTP_USER,
           to: email,
           subject: 'Your Smart Health Care OTP',
           text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
         });
+      } catch (mailError) {
+        console.error('OTP email delivery error:', mailError);
+
+        if (isProduction) {
+          return res.status(500).json({ message: 'Failed to send OTP email' });
+        }
+
+        return res.json(buildOtpResponse({ email, otp, delivered: false }));
       }
 
-      return res.json({
-        message: `OTP sent successfully to ${email}`,
-        email,
-      });
+      return res.json(buildOtpResponse({ email, otp, delivered: true }));
     } catch (error) {
       console.error('OTP send error:', error);
       return res.status(500).json({ message: 'Failed to send OTP' });

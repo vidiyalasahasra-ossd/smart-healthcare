@@ -53,8 +53,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(formData);
-      navigate(`/${formData.role}-dashboard`);
+      const loggedInUser = await login(formData);
+      navigate(`/${loggedInUser.role}-dashboard`);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
